@@ -22,18 +22,18 @@ module Rouge
         is as in by
       ]
 
-      prepro_type_keywords = %w[type opcode instruction]
+      prepro_type_keywords = %w[type opcode instruction signature]
       int_types = %w[i8 i16 i32 i64]
       float_types = %w[f32 f64]
       type_keywords = %w[void char bool string] + int_types + float_types
       constant_keywords = %w[true false]
       special_keywords = %w[\^return \^class]
 
-      name = %r'[a-zA-Z_$]+[a-zA-Z0-9_$]*'
+      name = %r'[a-zA-Z_]+[a-zA-Z0-9_$]*'
       arithmetic_ops = %r'\+\+|--|[-+*/%]'
       logic_ops = %r'([|&^]|&&|(\|\|)|<<|>>>|>>)'
       range_ops = %r'((\.\.)|(\.\.<))'
-      punctuation = %r'[~!%^&*()+=|\[\]:,.<>/?-]'
+      punctuation = %r'[$~!%^&*()+=|\[\]:,.<>/?-]'
 
       float_literal = %r'[0-9]+[0-9_]*(\.[0-9]+[0-9_]*)?([eE][0-9]+[0-9_]*)?'
       dec_literal = %r'[0-9]+[0-9_]*'
@@ -115,27 +115,34 @@ module Rouge
         rule %r'#{arithmetic_ops}|#{logic_ops}|#{range_ops}', Operator
         rule %r'\)', Punctuation, :pop!
         rule %r'\(', Punctuation, :body # Keep state steck symmetrical for parens
-        rule %r'\$\{', Literal::String::Interpol, :lerp
-        rule %r'[{}]', Punctuation
+        rule %r'\$\{', Keyword, :lerp
+        rule %r'\{', Punctuation
+        rule %r'}', Punctuation
         rule %r'"'m, Literal::String::Double, :string
         rule %r"'\\.'|'[^\\]'", Str::Char
         rule punctuation, Punctuation
         rule name, Name
       end
 
-      state :lerp do
+      state :string_lerp do
         rule %r'}', Literal::String::Interpol, :pop!
+        mixin :body
+      end
+
+      state :lerp do
+        rule %r'}', Keyword, :pop!
         mixin :body
       end
 
       state :string do
         rule %r'"', Literal::String::Double, :pop!
-        rule %r'\$\{', Literal::String::Interpol, :lerp
+        rule %r'\$\{', Literal::String::Interpol, :string_lerp
         rule %r'[^"${}]+', Literal::String::Double
       end
 
       state :macro do
         rule name, Name::Function, :pop!
+        rule %r'\$\{', Keyword, [:pop!, :lerp]
       end
 
       state :macro_call do
@@ -145,18 +152,22 @@ module Rouge
 
       state :define do
         rule name, Name::Variable, :pop!
+        rule %r'\$\{', Keyword, [:pop!, :lerp]
+        rule punctuation, Punctuation
       end
 
       state :field do
         rule %r'<#{name}(/#{name})*?>', Name::Class # class types
-        rule punctuation, Punctuation
         rule name, Name::Variable::Instance, :pop!
+        rule %r'\$\{', Keyword, [:pop!, :lerp]
+        rule punctuation, Punctuation
       end
 
       state :function do
+        rule %r'<#{name}(/#{name})*?>', Name::Class # class types
         rule %r'(\.)(#{name})', Name::Function, :pop!
         rule %r'(\.)(<#{name}>)', Name::Function, :pop! # special function names
-        rule %r'<#{name}(/#{name})*?>', Name::Class # class types
+        rule %r'\$\{', Keyword, [:pop!, :lerp]
         rule punctuation, Punctuation
       end
 
