@@ -155,7 +155,7 @@ module Rouge
         rule %r'#{bin_literal}(#{int_types.join('|')})?', Literal::Number::Bin
         rule %r'#{hex_literal}(#{int_types.join('|')})?', Literal::Number::Hex
         rule %r'#{oct_literal}(#{int_types.join('|')})?', Literal::Number::Oct
-        rule %r'#{float_literal}(#{float_types.join('|')})?', Literal::Number::Float
+        rule %r'#{float_literal}(#{float_types.join('|')})', Literal::Number::Float
         rule %r'#{dec_literal}(#{int_types.join('|')})?', Literal::Number::Integer
       end
 
