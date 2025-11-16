@@ -19,7 +19,7 @@ module Rouge
         public protected private static sync final transient volatile
         info error assert version define include
         if else when for break continue default
-        is as in by
+        this is as in by
       ]
 
       prepro_type_keywords = %w[type opcode instruction signature]

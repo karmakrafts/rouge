@@ -1,49 +1,37 @@
-// JBPL is statically typed and its typesystem strongly coupled to the JVM
-final define my_string: string = "Hello, World!" // string == <java/lang/String>
+final define my_string: string = "Hello, World!"
 
-// JBPL supports mutability..
 define my_variable: i32 = 0
 my_variable++
-info "my_variable is ${my_variable}" // ..and string interpolation
+info "my_variable is ${my_variable}"
 
-// It has JVM signatures, instructions and opcodes as first-class types.
 define my_fld_sig: signature(field) = signature <com/example/Foo>.test: i32
 define my_fun_sig: signature(fun) = signature <com/example/Foo>.test(): void
 define my_insn: instruction = instruction(ldc "Hello, World!")
 define my_op: opcode = opcode invokestatic
 
-// It also supports surprisingly dynamic arrays with a familiar feel..
 define my_array: [i32] = []{0, 1, 2, 3}
 my_array += 4
 my_array -= []{0, 2}
 
-// ..and various flavours of control flow.
 for(value in my_array) {
     info "my_array value is: ${value}"
 }
 
-// Of course we also support ranges for builtin types.
 for(i in 0..<sizeof(my_array)) {
     info "my_array value at ${i} is: ${my_array[i]}"
 }
 
-// Inject into existing functions; turn someFunction into a NOOP
 inject <com/example/TargetClass>.someFunction(): void by MySelector {
-    return // Inject a return instruction at the head of the function
+    return
 }
 
 static sync fun <com/example/TargetClass>.someFunction2(): void {
     return
 }
 
-// It also supports aliasing types..
-
 type MyAliasedType = i32
 type MyAliasedType2 = <com/example/Testing>
 define my_type_var: type = type MyAliasedType
 define my_type_var2: type = type <com/example/Testing>
 
-// ..and preprocessor classes
 ^class MyPreproType(x: i32, y: i32, z: i32)
-
-// AND MUCH MUCH MORE!
