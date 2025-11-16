@@ -14,22 +14,23 @@ module Rouge
       mimetypes 'text/x-jbpl'
 
       keywords = %w[
-        type typeof opcode opcodeof instruction
-        yeet inject field fun class
+        typeof opcodeof sizeof
+        yeet inject field fun class macro
         public protected private static sync final transient volatile
-        info error assert version define
+        info error assert version define include
         if else when for break continue default
         is as in by
       ]
-      type_keywords = %w[void i8 i16 i32 i64 f32 f64 char bool string]
+
+      prepro_type_keywords = %w[type opcode instruction]
+      int_types = %w[i8 i16 i32 i64]
+      float_types = %w[f32 f64]
+      type_keywords = %w[void char bool string] + int_types + float_types
       constant_keywords = %w[true false]
       special_keywords = %w[\^return \^class]
 
-      int_types = %w[i8 i16 i32 i64]
-      float_types = %w[f32 f64]
-
       name = %r'[a-zA-Z_$]+[a-zA-Z0-9_$]*'
-      arithmetic_ops = %r'[-+*/%]'
+      arithmetic_ops = %r'\+\+|--|[-+*/%]'
       logic_ops = %r'([|&^]|&&|(\|\|)|<<|>>>|>>)'
       range_ops = %r'((\.\.)|(\.\.<))'
       punctuation = %r'[~!%^&*()+=|\[\]:,.<>/?-]'
@@ -39,6 +40,25 @@ module Rouge
       bin_literal = %r'0[bB][01]+[01_]*'
       hex_literal = %r'0[xX][0-9a-fA-F]+[0-9a-fA-F_]*'
       oct_literal = %r'0[oO][0-7]+[0-7_]*'
+
+      const_insn = %r'ldc|([bs]ipush)|(iconst_(m1|[012345]))|(lconst_[01])|(fconst_[012])|(dconst_[01])|aconst_null'
+      stack_insn = %r'[ilfda](load|store)|(dup(2)?(_x[12])?)|(pop(2)?)'
+      field_insn = %r'(get(field|static))|(put(field|static))'
+      jump_insn = %r'goto|jsr|ret'
+      conv_insn = %r'(i2[bcdfls])|(f2[dil])|(d2[fil])|(l2[dfi])'
+      logic_insn = %r'([il](ushr|shl|shr|and|xor|or))'
+      arith_insn = %r'([ilfd](add|sub|mul|div|rem|neg))'
+      array_insn = %r'multianewarray|arraylength|anewarray|([ilfdacsz]newarray)|([ilfda]aload)|([ilfda]astore)'
+      misc_insn = %r'(monitor(enter|exit))|athrow|iinc|nop'
+      ctrl_insn = %r'((lookup|table)switch)|([ilfda]?return)'
+      type_insn = %r'checkcast|instanceof|new'
+      cond_insn = %r'(if_acmp(eq|ne))|(if(_icmp)?(eq|ne|lt|ge|gt|le))'
+      invoke_insn = %r'(invoke(interface|virtual|static|special|dynamic))'
+
+      insn = %r'(#{[
+        const_insn, stack_insn, field_insn, jump_insn, conv_insn, type_insn, cond_insn,
+        logic_insn, arith_insn, invoke_insn, array_insn, misc_insn, ctrl_insn
+      ].join('|')})'
 
       state :root do
         mixin :body
@@ -52,7 +72,7 @@ module Rouge
 
         rule %r'\b(macro)(\s+)' do
           groups Keyword, Text
-          push :function
+          push :macro
         end
 
         rule %r'\b(field)(\s+)' do
@@ -67,19 +87,24 @@ module Rouge
 
         rule %r'(?:#{special_keywords.join('|')})\b', Keyword
         rule %r'\b(?:#{keywords.join('|')})\b', Keyword
+        rule %r'\b(?:#{prepro_type_keywords.join('|')})\b', Keyword
         rule %r'\b(?:#{type_keywords.join('|')})\b', Keyword::Type
         rule %r'\b(?:#{constant_keywords.join('|')})\b', Keyword::Constant
+
+        rule %r'\b(?:#{insn})\b', Operator::Word # instructions
+
         rule %r'[^\S\n]+', Text
         rule %r'\\\n', Text # line continuation
         rule %r'//.*?$', Comment::Single
         rule %r'/[*].*[*]/', Comment::Multiline # single line block comment
         rule %r'/[*].*', Comment::Multiline, :comment # multiline block comment
         rule %r'\n', Text
-        rule %r'#{bin_literal}(#{int_types.join('|')})?', Num::Bin
-        rule %r'#{hex_literal}(#{int_types.join('|')})?', Num::Hex
-        rule %r'#{oct_literal}(#{int_types.join('|')})?', Num::Oct
-        rule %r'#{float_literal}(#{float_types.join('|')})?', Num::Float
-        rule %r'#{dec_literal}(#{int_types.join('|')})?', Num::Integer
+
+        rule %r'#{bin_literal}(#{int_types.join('|')})?', Literal::Number::Bin
+        rule %r'#{hex_literal}(#{int_types.join('|')})?', Literal::Number::Hex
+        rule %r'#{oct_literal}(#{int_types.join('|')})?', Literal::Number::Oct
+        rule %r'#{float_literal}(#{float_types.join('|')})?', Literal::Number::Float
+        rule %r'#{dec_literal}(#{int_types.join('|')})?', Literal::Number::Integer
 
         rule %r'(#{name})(\()' do
           groups Name::Function, Punctuation
@@ -90,22 +115,23 @@ module Rouge
         rule %r'#{arithmetic_ops}|#{logic_ops}|#{range_ops}', Operator
         rule %r'\)', Punctuation, :pop!
         rule %r'\(', Punctuation, :body # Keep state steck symmetrical for parens
-        rule punctuation, Punctuation
+        rule %r'\$\{', Literal::String::Interpol, :lerp
         rule %r'[{}]', Punctuation
-        rule %r'"'m, Str, :string
+        rule %r'"'m, Literal::String::Double, :string
         rule %r"'\\.'|'[^\\]'", Str::Char
+        rule punctuation, Punctuation
         rule name, Name
       end
 
-      state :string do
-        rule %r'"', Str, :pop!
-        rule %r'\$\{', Keyword, :lerp
-        rule %r'[^"${}]+', Str
+      state :lerp do
+        rule %r'}', Literal::String::Interpol, :pop!
+        mixin :body
       end
 
-      state :lerp do
-        rule %r'}', Keyword, :pop!
-        mixin :body
+      state :string do
+        rule %r'"', Literal::String::Double, :pop!
+        rule %r'\$\{', Literal::String::Interpol, :lerp
+        rule %r'[^"${}]+', Literal::String::Double
       end
 
       state :macro do
@@ -124,13 +150,14 @@ module Rouge
       state :field do
         rule %r'<#{name}(/#{name})*?>', Name::Class # class types
         rule punctuation, Punctuation
-        rule name, Name::Variable, :pop!
+        rule name, Name::Variable::Instance, :pop!
       end
 
       state :function do
+        rule %r'(\.)(#{name})', Name::Function, :pop!
+        rule %r'(\.)(<#{name}>)', Name::Function, :pop! # special function names
         rule %r'<#{name}(/#{name})*?>', Name::Class # class types
         rule punctuation, Punctuation
-        rule name, Name::Function, :pop!
       end
 
       state :comment do
