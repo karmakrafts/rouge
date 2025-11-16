@@ -7,8 +7,8 @@ my_variable++
 info "my_variable is ${my_variable}" // ..and string interpolation
 
 // It has JVM signatures, instructions and opcodes as first-class types.
-define my_fld_sig: signature(field) = <com/example/Foo>.test: i32
-define my_fun_sig: signature(fun) = <com/example/Foo>.test(): void
+define my_fld_sig: signature(field) = signature <com/example/Foo>.test: i32
+define my_fun_sig: signature(fun) = signature <com/example/Foo>.test(): void
 define my_insn: instruction = instruction(ldc "Hello, World!")
 define my_op: opcode = opcode invokestatic
 
@@ -30,6 +30,10 @@ for(i in 0..<sizeof(my_array)) {
 // Inject into existing functions; turn someFunction into a NOOP
 inject <com/example/TargetClass>.someFunction(): void by MySelector {
     return // Inject a return instruction at the head of the function
+}
+
+static sync fun <com/example/TargetClass>.someFunction2(): void {
+    return
 }
 
 // It also supports aliasing types..

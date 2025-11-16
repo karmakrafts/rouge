@@ -60,6 +60,8 @@ module Rouge
         logic_insn, arith_insn, invoke_insn, array_insn, misc_insn, ctrl_insn
       ].join('|')})'
 
+      class_type_name = %r'<#{name}(/#{name})*?>'
+
       state :root do
         mixin :body
       end
@@ -69,34 +71,41 @@ module Rouge
           groups Keyword, Text
           push :prepro_class
         end
-
-        rule %r'\b(fun)(\s+)' do
+        rule %r'\b(fun)(\s+)(?![)=\s])' do
           groups Keyword, Text
           push :function
         end
-
+        rule %r'\b(inject)(\s+)(?![)=\s])' do
+          groups Keyword, Text
+          push :function
+        end
         rule %r'\b(macro)(\s+)' do
           groups Keyword, Text
           push :macro
         end
-
         rule %r'\b(field)(\s+)' do
           groups Keyword, Text
           push :field
         end
-
         rule %r'\b(define)(\s+)' do
           groups Keyword, Text
           push :define
         end
-
         rule %r'\b(type)(\s+)(#{name})' do
           groups Keyword, Text, Name::Class
         end
-
         rule %r'\b(by)(\s+)' do
           groups Keyword, Text
           push :selection
+        end
+
+        rule %r'(\.)(\s*)(#{name})(\s*)(?=:)' do
+          # Names in field signatures
+          groups Punctuation, Text, Name::Variable::Instance, Text
+        end
+        rule %r'(\.)(\s*)(#{name})(\s*)(?=\()' do
+          # Names in function signatures
+          groups Punctuation, Text, Name::Function, Text
         end
 
         rule %r'(?:#{special_keywords.join('|')})\b', Keyword
@@ -116,12 +125,12 @@ module Rouge
 
         mixin :literal
 
-        rule %r'(#{name})(\()' do
+        rule %r'(?<=[>}]\.)(#{name})(\()' do
           groups Name::Function, Punctuation
           push :macro_call
         end
 
-        rule %r'<#{name}(/#{name})*?>', Name::Class # class types
+        rule class_type_name, Name::Class # class types
         rule %r'#{arithmetic_ops}|#{logic_ops}|#{range_ops}', Operator
         rule %r'\)', Punctuation, :pop!
         rule %r'\(', Punctuation, :body # Keep state steck symmetrical for parens
@@ -131,7 +140,7 @@ module Rouge
         rule %r'\{', Punctuation
         rule %r'}', Punctuation
         rule punctuation, Punctuation
-        rule name, Error
+        rule name, Name::Variable
       end
 
       state :literal do
@@ -185,14 +194,14 @@ module Rouge
       end
 
       state :field do
-        rule %r'<#{name}(/#{name})*?>', Name::Class # class types
+        rule class_type_name, Name::Class # class types
         rule name, Name::Variable::Instance, :pop!
         rule %r'\$\{', Keyword, [:pop!, :lerp]
         rule punctuation, Punctuation
       end
 
       state :function do
-        rule %r'<#{name}(/#{name})*?>', Name::Class # class types
+        rule class_type_name, Name::Class # class types
         rule %r'(\.)(#{name})', Name::Function, :pop!
         rule %r'(\.)(<#{name}>)', Name::Function, :pop! # special function names
         rule %r'\$\{', Keyword, [:pop!, :lerp]
