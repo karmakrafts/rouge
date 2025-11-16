@@ -65,6 +65,11 @@ module Rouge
       end
 
       state :body do
+        rule %r'(\^class)(\s+)' do
+          groups Keyword, Text
+          push :prepro_class
+        end
+
         rule %r'\b(fun)(\s+)' do
           groups Keyword, Text
           push :function
@@ -85,6 +90,10 @@ module Rouge
           push :define
         end
 
+        rule %r'\b(type)(\s+)(#{name})' do
+          groups Keyword, Text, Name::Class
+        end
+
         rule %r'(?:#{special_keywords.join('|')})\b', Keyword
         rule %r'\b(?:#{keywords.join('|')})\b', Keyword
         rule %r'\b(?:#{prepro_type_keywords.join('|')})\b', Keyword
@@ -100,11 +109,7 @@ module Rouge
         rule %r'/[*].*', Comment::Multiline, :comment # multiline block comment
         rule %r'\n', Text
 
-        rule %r'#{bin_literal}(#{int_types.join('|')})?', Literal::Number::Bin
-        rule %r'#{hex_literal}(#{int_types.join('|')})?', Literal::Number::Hex
-        rule %r'#{oct_literal}(#{int_types.join('|')})?', Literal::Number::Oct
-        rule %r'#{float_literal}(#{float_types.join('|')})?', Literal::Number::Float
-        rule %r'#{dec_literal}(#{int_types.join('|')})?', Literal::Number::Integer
+        mixin :literal
 
         rule %r'(#{name})(\()' do
           groups Name::Function, Punctuation
@@ -115,13 +120,27 @@ module Rouge
         rule %r'#{arithmetic_ops}|#{logic_ops}|#{range_ops}', Operator
         rule %r'\)', Punctuation, :pop!
         rule %r'\(', Punctuation, :body # Keep state steck symmetrical for parens
+        rule %r']', Punctuation, :pop!
+        rule %r'\[', Punctuation, :body
         rule %r'\$\{', Keyword, :lerp
         rule %r'\{', Punctuation
         rule %r'}', Punctuation
+        rule punctuation, Punctuation
+        rule name, Error
+      end
+
+      state :literal do
         rule %r'"'m, Literal::String::Double, :string
         rule %r"'\\.'|'[^\\]'", Str::Char
-        rule punctuation, Punctuation
-        rule name, Name
+        rule %r'#{bin_literal}(#{int_types.join('|')})?', Literal::Number::Bin
+        rule %r'#{hex_literal}(#{int_types.join('|')})?', Literal::Number::Hex
+        rule %r'#{oct_literal}(#{int_types.join('|')})?', Literal::Number::Oct
+        rule %r'#{float_literal}(#{float_types.join('|')})?', Literal::Number::Float
+        rule %r'#{dec_literal}(#{int_types.join('|')})?', Literal::Number::Integer
+      end
+
+      state :prepro_class do
+        rule name, Name::Class, :pop!
       end
 
       state :string_lerp do
