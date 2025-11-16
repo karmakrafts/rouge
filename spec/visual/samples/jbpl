@@ -26,6 +26,7 @@ inject <com/example/TargetClass>.someFunction(): void by MySelector {
 }
 
 static sync fun <com/example/TargetClass>.someFunction2(): void {
+    define insns = fun.instructions
     return
 }
 

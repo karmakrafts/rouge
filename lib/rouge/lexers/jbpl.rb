@@ -96,6 +96,11 @@ module Rouge
           push :selection
         end
 
+        rule %r'\b(fun)(\s*)(\.)(\s*)(#{name})' do
+          # Names in fun scope references
+          groups Keyword, Text, Punctuation, Text, Name::Variable
+        end
+
         rule %r'(\.)(\s*)(#{name})(\s*)(?=:)' do
           # Names in field signatures
           groups Punctuation, Text, Name::Variable::Instance, Text
