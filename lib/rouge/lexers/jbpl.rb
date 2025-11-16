@@ -35,6 +35,7 @@ module Rouge
       logic_ops = %r'([|&^]|&&|(\|\|)|<<|>>>|>>)'
       logic_assign_ops = %r'([|&^]|<<|>>>|>>)='
       range_ops = %r'((\.\.)|(\.\.<))'
+      comp_ops = %r'([!=<>]=)|<|>'
       punctuation = %r'[$~!%^&*()+=|\[\]:,.<>/?-]'
 
       float_literal = %r'[0-9]+[0-9_]*(\.[0-9]+[0-9_]*)?([eE][0-9]+[0-9_]*)?'
@@ -133,7 +134,7 @@ module Rouge
         end
 
         rule class_type_name, Name::Class # class types
-        rule %r'#{arithmetic_assign_ops}|#{logic_assign_ops}|#{arithmetic_ops}|#{logic_ops}|#{range_ops}', Operator
+        rule %r'#{comp_ops}|#{arithmetic_assign_ops}|#{logic_assign_ops}|#{arithmetic_ops}|#{logic_ops}|#{range_ops}', Operator
         rule %r'\)', Punctuation, :pop!
         rule %r'\(', Punctuation, :body # Keep state steck symmetrical for parens
         rule %r']', Punctuation, :pop!
