@@ -14,14 +14,15 @@ module Rouge
       mimetypes 'text/x-jbpl'
 
       keywords = %w[
-        void i8 i16 i32 i64 f32 f64 char bool string
         type typeof opcode opcodeof instruction
         yeet inject field fun class
         public protected private static sync final transient volatile
         info error assert version define
-        if else when for break continue true false default
+        if else when for break continue default
         is as in by
       ]
+      type_keywords = %w[void i8 i16 i32 i64 f32 f64 char bool string]
+      constant_keywords = %w[true false]
       special_keywords = %w[\^return \^class]
 
       int_types = %w[i8 i16 i32 i64]
@@ -66,6 +67,8 @@ module Rouge
 
         rule %r'(?:#{special_keywords.join('|')})\b', Keyword
         rule %r'\b(?:#{keywords.join('|')})\b', Keyword
+        rule %r'\b(?:#{type_keywords.join('|')})\b', Keyword::Type
+        rule %r'\b(?:#{constant_keywords.join('|')})\b', Keyword::Constant
         rule %r'[^\S\n]+', Text
         rule %r'\\\n', Text # line continuation
         rule %r'//.*?$', Comment::Single
