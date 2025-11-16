@@ -25,10 +25,17 @@ inject <com/example/TargetClass>.someFunction(): void by MySelector {
     return
 }
 
+inject <com/example/TargetClass>.someField2: string {
+    define access: i32 = field.access
+}
+
 static sync fun <com/example/TargetClass>.someFunction2(): void {
-    define insns = fun.instructions
+    define insns: [instruction] = fun.instructions
+    define access: i32 = fun.access
     return
 }
+
+private static field <com/example/TargetClass>.someField: i32 = 0
 
 type MyAliasedType = i32
 type MyAliasedType2 = <com/example/Testing>

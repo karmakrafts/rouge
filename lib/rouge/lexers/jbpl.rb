@@ -101,6 +101,11 @@ module Rouge
           groups Keyword, Text, Punctuation, Text, Name::Variable
         end
 
+        rule %r'\b(field)(\s*)(\.)(\s*)(#{name})' do
+          # Names in field scope references
+          groups Keyword, Text, Punctuation, Text, Name::Variable
+        end
+
         rule %r'(\.)(\s*)(#{name})(\s*)(?=:)' do
           # Names in field signatures
           groups Punctuation, Text, Name::Variable::Instance, Text
