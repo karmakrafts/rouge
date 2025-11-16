@@ -94,6 +94,11 @@ module Rouge
           groups Keyword, Text, Name::Class
         end
 
+        rule %r'\b(by)(\s+)' do
+          groups Keyword, Text
+          push :selection
+        end
+
         rule %r'(?:#{special_keywords.join('|')})\b', Keyword
         rule %r'\b(?:#{keywords.join('|')})\b', Keyword
         rule %r'\b(?:#{prepro_type_keywords.join('|')})\b', Keyword
@@ -137,6 +142,10 @@ module Rouge
         rule %r'#{oct_literal}(#{int_types.join('|')})?', Literal::Number::Oct
         rule %r'#{float_literal}(#{float_types.join('|')})?', Literal::Number::Float
         rule %r'#{dec_literal}(#{int_types.join('|')})?', Literal::Number::Integer
+      end
+
+      state :selection do
+        rule name, Name::Function, :pop!
       end
 
       state :prepro_class do

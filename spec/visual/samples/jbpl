@@ -28,7 +28,7 @@ for(i in 0..<sizeof(my_array)) {
 }
 
 // Inject into existing functions; turn someFunction into a NOOP
-inject <com/example/TargetClass>.someFunction(): void {
+inject <com/example/TargetClass>.someFunction(): void by MySelector {
     return // Inject a return instruction at the head of the function
 }
 
@@ -40,6 +40,6 @@ define my_type_var: type = type MyAliasedType
 define my_type_var2: type = type <com/example/Testing>
 
 // ..and preprocessor classes
-^class MyPreproType()
+^class MyPreproType(x: i32, y: i32, z: i32)
 
 // AND MUCH MUCH MORE!
