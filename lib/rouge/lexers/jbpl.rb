@@ -17,7 +17,7 @@ module Rouge
         typeof opcodeof sizeof
         yeet inject field fun class macro
         public protected private static sync final transient volatile
-        info error assert version define include
+        assert version define include
         if else when for break continue default
         this is as in by
       ]
