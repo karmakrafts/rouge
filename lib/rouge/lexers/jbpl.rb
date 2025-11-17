@@ -72,10 +72,6 @@ module Rouge
           groups Keyword, Text
           push :function
         end
-        rule %r'\b(inject)(\s+)(?![)=\s])' do
-          groups Keyword, Text
-          push :function
-        end
         rule %r'\b(macro)(\s+)' do
           groups Keyword, Text
           push :macro
@@ -139,7 +135,7 @@ module Rouge
 
         rule class_type_name, Name::Class # class types
         rule %r'\)', Punctuation, :pop!
-        rule %r'\(', Punctuation, :body # Keep state steck symmetrical for parens
+        rule %r'\(', Punctuation, :body # Keep state stack symmetrical for parens
         rule %r']', Punctuation, :pop!
         rule %r'\[', Punctuation, :body
         rule %r'\$\{', Keyword, :lerp
