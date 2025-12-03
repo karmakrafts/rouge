@@ -25,7 +25,7 @@ module Rouge
       prepro_type_keywords = %w[type opcode instruction signature]
       int_types = %w[i8 i16 i32 i64]
       float_types = %w[f32 f64]
-      type_keywords = %w[void char bool string] + int_types + float_types
+      type_keywords = %w[void char bool string any] + int_types + float_types
       constant_keywords = %w[true false]
       special_keywords = %w[\^return \^class]
 
