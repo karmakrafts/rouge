@@ -147,12 +147,19 @@ module Rouge
 
       state :literal do
         rule %r'"'m, Literal::String::Double, :string
-        rule %r"'\\.'|'[^\\]'", Str::Char
+        rule %r'\'', Literal::String::Single, :char
         rule %r'#{bin_literal}(#{int_types.join('|')})?', Literal::Number::Bin
         rule %r'#{hex_literal}(#{int_types.join('|')})?', Literal::Number::Hex
         rule %r'#{oct_literal}(#{int_types.join('|')})?', Literal::Number::Oct
         rule %r'#{float_literal}(#{float_types.join('|')})', Literal::Number::Float
         rule %r'#{dec_literal}(#{int_types.join('|')})?', Literal::Number::Integer
+      end
+
+      state :char do
+        rule %r'\\\'', Literal::String::Escape
+        rule %r'\'', Literal::String::Single, :pop!
+        rule %r'\\[nrbt0\\]', Literal::String::Escape
+        rule %r'[^\\\']+', Literal::String::Single
       end
 
       state :selection do
@@ -174,9 +181,11 @@ module Rouge
       end
 
       state :string do
+        rule %r'\\"', Literal::String::Escape
         rule %r'"', Literal::String::Double, :pop!
         rule %r'\$\{', Literal::String::Interpol, :string_lerp
-        rule %r'[^"${}]+', Literal::String::Double
+        rule %r'\\[nrbt0\\$]', Literal::String::Escape
+        rule %r'[^"${}\\]+', Literal::String::Double
       end
 
       state :macro do
